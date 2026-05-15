@@ -1,0 +1,46 @@
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: bank-postgres-container
+    environment:
+      POSTGRES_DB: Bank_Db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: BazarutoIsland123!@#
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - bank-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d Bank_Db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spring-bank-app:
+    build: .
+    container_name: bank-core-api-container
+    ports:
+      - "8080:8080"
+    environment:
+        - DB_HOST=postgres-db
+        - DB_PORT=5432
+        - DB_NAME=Bank_Db
+        - DB_USER=postgres
+        - DB_PASSWORD=BazarutoIsland123!@#
+
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - bank-network
+    restart: always
+
+volumes:
+  pgdata:
+
+networks:
+  bank-network:
+    driver: bridge
